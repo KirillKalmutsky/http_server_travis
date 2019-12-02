@@ -9,4 +9,4 @@ services:
     ports:
     - "65432:65432"
    
-    command: server.py
+    command: python server.py
