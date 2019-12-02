@@ -85,12 +85,12 @@ class TestServerMethods(unittest.TestCase):
         json_data = {'key' : self.key}
         json_data = json.dumps(json_data)
         
-        response = requests.delete(self.utl + '/delete',
+        response = requests.delete(self.url + '/delete',
                                    data=json_data)
 
         self.assertEqual(response.status_code, 205)
 
-        response = requests.delete(self.utl + '/delete',
+        response = requests.delete(self.url + '/delete',
                                    data={'key': self.key})
 
         self.assertEqual(response.status_code, 205)
