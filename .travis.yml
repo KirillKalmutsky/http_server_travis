@@ -23,7 +23,7 @@ install:
 
 script:
   - python3 server.py
-  - python3 unittest.py
+  - python3 test_server.py
 
 after_success:
   - cat ~/docker_password.txt | docker login -u kirillkalmutsky --password-stdin
