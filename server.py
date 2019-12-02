@@ -23,19 +23,15 @@ def post():
         code = 400
         return '', code
 
-    try:
-        if table.find_one({'key': req['key']}) is None:
-            table.insert_one({'key': req['key'], 'value': req['message']})
-            code = 200
-            tmp = json.dumps({"status": "Create"})
-            return tmp.encode("utf-8"), code
-        else:
-            code = 208
-            tmp = json.dumps({"status": "Already Created"})
-            return tmp.encode("utf-8"), code
-    except:
-        code = 500
-        return '', code
+    if table.find_one({'key': req['key']}) is None:
+        table.insert_one({'key': req['key'], 'value': req['message']})
+        code = 200
+        tmp = json.dumps({"status": "Create"})
+        return tmp.encode("utf-8"), code
+    else:
+        code = 208
+        tmp = json.dumps({"status": "Already Created"})
+        return tmp.encode("utf-8"), code
 
 
 @app.route('/put', methods=['PUT'])
@@ -46,16 +42,11 @@ def put():
         code = 400
         return '', code
 
-    try:
-        table.find_one_and_update(
-            {'key':req['key']}, {"$set": {'key':req['key'], 'value': req['message']}}, upsert=True
-        )
-        code = 200
-        return '', code
-    except:
-        code = 500
-        return '', code
-
+    table.find_one_and_update(
+        {'key':req['key']}, {"$set": {'key':req['key'], 'value': req['message']}}, upsert=True
+    )
+    code = 200
+    return '', code
 
 
 @app.route('/delete', methods=['DELETE'])
@@ -66,16 +57,12 @@ def delete():
         code = 400
         return '', code
 
-    try:
-        if table.find_one({'key': req['key']}) is not None:
-            if req['key'] in cache.keys():
-                del cache[req['key']]
-            table.delete(req['key'])
-        code = 205
-        return '', code
-    except:
-        code = 500
-        return '', code
+    if table.find_one({'key': req['key']}) is not None:
+        if req['key'] in cache.keys():
+            del cache[req['key']]
+        table.delete(req['key'])
+    code = 205
+    return '', code
 
 
 @app.route('/get', methods=['GET'])
@@ -85,38 +72,35 @@ def get():
     except:
         code = 400
         return '', code
-    try:
-        logging.debug('get for key [%s]', req['key'])
-        if req['no-cache']:
+
+    logging.debug('get for key [%s]', req['key'])
+    if req['no-cache']:
+        value = table.find_one({'key': req['key']})
+        if value is not None:
+            code = 200
+            tmp = json.dumps({"status": "Ok", "message": value})
+            return tmp.encode("utf-8"), code
+        else:
+            logging.error('no data in database for key [%s]', req['key'])
+            code = 404
+            return '', code
+    else:
+        if req['key'] in cache.keys():
+            code = 200
+            tmp = json.dumps({"status": "Ok", "message": cache[req['key']]})
+            return tmp.encode("utf-8"), code
+        else:
+            logging.warning('no data in cache for key [%s]', req['key'])
             value = table.find_one({'key': req['key']})
             if value is not None:
                 code = 200
+                cache[req['key']] = value
                 tmp = json.dumps({"status": "Ok", "message": value})
                 return tmp.encode("utf-8"), code
             else:
                 logging.error('no data in database for key [%s]', req['key'])
                 code = 404
                 return '', code
-        else:
-            if req['key'] in cache.keys():
-                code = 200
-                tmp = json.dumps({"status": "Ok", "message": cache[req['key']]})
-                return tmp.encode("utf-8"), code
-            else:
-                logging.warning('no data in cache for key [%s]', req['key'])
-                value = table.find_one({'key': req['key']})
-                if value is not None:
-                    code = 200
-                    cache[req['key']] = value
-                    tmp = json.dumps({"status": "Ok", "message": value})
-                    return tmp.encode("utf-8"), code
-                else:
-                    logging.error('no data in database for key [%s]', req['key'])
-                    code = 404
-                    return '', code
-    except:
-        code = 500
-        return '', code
 
 
 if __name__ == '__main__':
